@@ -39,7 +39,7 @@ You must provide a valid GitHub username as an argument to the program and a pro
 ```properties
 
 # GitHub API URL
-github.token=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
+github.token=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # log level (optional) (options: trace, debug, info, warn, error)
 # default: info
 log.level=debug
