@@ -126,15 +126,15 @@ public class HttpConnection <T>{
         }
     }
 
-    public String getFullResponse(Type typeOfT) throws IOException {
+    public String getFullResponse() throws IOException {
         StringBuilder fullResponseBuilder = new StringBuilder();
         appendResponseCode(fullResponseBuilder);
         appendResponseHeaders(fullResponseBuilder);
-        appendResponseBody(fullResponseBuilder, typeOfT);
+        appendResponseBody(fullResponseBuilder);
         return fullResponseBuilder.toString();
     }
 
-    private <T> void appendResponseBody(StringBuilder fullResponseBuilder, Type typeOfT) throws IOException {
+    private void appendResponseBody(StringBuilder fullResponseBuilder) {
         fullResponseBuilder.append(RESPONSE_SEPARATOR_LINE);
         fullResponseBuilder.append("RESPONSE BODY:\n");
 
@@ -166,8 +166,8 @@ public class HttpConnection <T>{
                 .filter(entry -> entry.getKey() != null)
                 .forEach(entry -> {
                     fullResponseBuilder.append(entry.getKey()).append(": ");
-                    List headerValues = entry.getValue();
-                    Iterator it = headerValues.iterator();
+                    List<String> headerValues = entry.getValue();
+                    Iterator<String> it = headerValues.iterator();
                     if (it.hasNext()) {
                         fullResponseBuilder.append(it.next());
                         while (it.hasNext()) {

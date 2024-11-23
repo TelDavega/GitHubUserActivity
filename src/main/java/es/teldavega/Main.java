@@ -19,8 +19,8 @@ public class Main {
 
     public static final String BASEURL = "https://api.github.com/users/";
     public static final String EVENTS = "/events";
-    private static Logger log = LogManager.getLogger(Main.class);
-    private static Logger alwaysVisibleLog = LogManager.getLogger("AlwaysVisibleLogger");
+    private static final Logger log = LogManager.getLogger(Main.class);
+    private static final Logger alwaysVisibleLog = LogManager.getLogger("AlwaysVisibleLogger");
 
     public static void main(String[] args) throws IOException {
         Properties properties = loadProperties();
@@ -65,7 +65,7 @@ public class Main {
 
     private static void printResult(HttpConnection<GithubUserEvent> httpConnection) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(httpConnection.getFullResponse(GithubUserEvent[].class));
+            log.debug(httpConnection.getFullResponse());
         } else if (log.isInfoEnabled()) {
             log.info(httpConnection.getResponseWithoutBody());
         }
