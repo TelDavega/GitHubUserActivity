@@ -16,12 +16,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.11.0</version>
@@ -58,7 +52,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>es.teldavega.task_tracker_cli.TaskCLI</mainClass>
+                            <mainClass>es.teldavega.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

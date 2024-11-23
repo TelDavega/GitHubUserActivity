@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -21,8 +22,16 @@ public class Main {
     public static final String EVENTS = "/events";
     private static final Logger log = LogManager.getLogger(Main.class);
     private static final Logger alwaysVisibleLog = LogManager.getLogger("AlwaysVisibleLogger");
+    public static final String GITHUB_TOKEN = "github.token";
+    public static final String NO_GITHUB_TOKEN_PROVIDED = "No github token provided";
 
     public static void main(String[] args) throws IOException {
+
+        if (args.length == 0) {
+            log.error("No arguments provided. Please provide a username.");
+            return;
+        }
+
         Properties properties = loadProperties();
         String logLevel = properties.getProperty("log.level", "info").toUpperCase();
         setLogLevel(logLevel);
@@ -73,7 +82,16 @@ public class Main {
 
     private static HttpConnection<GithubUserEvent> getGithubUserEventHttpConnection(Properties properties, String baseUrl) throws IOException {
         Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", "Bearer " + properties.getProperty("github.token"));
+        try {
+            if (properties.getProperty(GITHUB_TOKEN) == null || properties.getProperty(GITHUB_TOKEN).isEmpty()) {
+                log.error(NO_GITHUB_TOKEN_PROVIDED);
+                throw new IOException(NO_GITHUB_TOKEN_PROVIDED);
+            }
+        } catch (NullPointerException e) {
+            log.error(NO_GITHUB_TOKEN_PROVIDED);
+            throw new IOException(NO_GITHUB_TOKEN_PROVIDED);
+        }
+        headers.put("Authorization", "Bearer " + properties.getProperty(GITHUB_TOKEN));
 
         HttpConnection<GithubUserEvent> httpConnection = new HttpConnection<>(baseUrl, HttpMethods.GET, null, headers);
         httpConnection.executeRequest(GithubUserEvent[].class, log);
@@ -81,11 +99,18 @@ public class Main {
     }
 
     private static Properties loadProperties() throws IOException {
-        if(log.isDebugEnabled()) {
-            log.debug("Loading properties from file application.properties");
+        String propertiesFile = System.getProperty("propertyFile");
+        if (propertiesFile == null || propertiesFile.isEmpty()) {
+            log.error("you must specify a properties file with -DpropertyFile=<path>");
+            throw new IOException("No properties file specified");
         }
+
         Properties properties = new Properties();
-        properties.load(Main.class.getClassLoader().getResourceAsStream("application.properties"));
+        try (FileInputStream fis = new FileInputStream(propertiesFile)) {
+            properties.load(fis);
+        } catch (IOException e) {
+            throw new IOException("Error loading property file " + propertiesFile, e);
+        }
         return properties;
     }
 
