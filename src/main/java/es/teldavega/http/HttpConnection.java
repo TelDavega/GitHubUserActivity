@@ -1,19 +1,22 @@
 package es.teldavega.http;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class HttpConnection {
+public class HttpConnection <T>{
     public static final String RESPONSE_SEPARATOR_LINE = "-------------------------\n";
     private URL url;
     private HttpMethods method;
@@ -22,6 +25,8 @@ public class HttpConnection {
     private HttpURLConnection connection;
     private int connectionTimeout;
     private int readTimeout;
+    private final Gson gson;
+    private T[] responseBody;
 
     public HttpConnection(String url, HttpMethods method, Map<String, String> params, Map<String, String> headers
             , int connectionTimeout, int readTimeout) throws MalformedURLException {
@@ -31,6 +36,7 @@ public class HttpConnection {
         this.headers = headers;
         this.connectionTimeout = connectionTimeout;
         this.readTimeout = readTimeout;
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
     public HttpConnection(String url, HttpMethods method, Map<String, String> params, Map<String, String> headers) throws MalformedURLException {
@@ -118,15 +124,15 @@ public class HttpConnection {
         }
     }
 
-    public String getFullResponse() throws IOException {
+    public String getFullResponse(Type typeOfT) throws IOException {
         StringBuilder fullResponseBuilder = new StringBuilder();
         appendResponseCode(fullResponseBuilder);
         appendResponseHeaders(fullResponseBuilder);
-        appendResponseBody(fullResponseBuilder);
+        appendResponseBody(fullResponseBuilder, typeOfT);
         return fullResponseBuilder.toString();
     }
 
-    private void appendResponseBody(StringBuilder fullResponseBuilder) throws IOException {
+    private <T> void appendResponseBody(StringBuilder fullResponseBuilder, Type typeOfT) throws IOException {
         fullResponseBuilder.append(RESPONSE_SEPARATOR_LINE);
         fullResponseBuilder.append("RESPONSE BODY:\n");
         BufferedReader in = new BufferedReader(
@@ -136,7 +142,8 @@ public class HttpConnection {
         while ((inputLine = in.readLine()) != null) {
             content.append(inputLine).append("\n");
         }
-        fullResponseBuilder.append(new GsonBuilder().setPrettyPrinting().create().fromJson(content.toString(), Object.class));
+        responseBody = gson.fromJson(content.toString(), typeOfT);
+        fullResponseBuilder.append(Arrays.toString(responseBody));
         in.close();
     }
 
@@ -168,10 +175,16 @@ public class HttpConnection {
                 .append("\n");
     }
 
-    public String getResponseWithoutHeader() throws IOException {
+    public String getResponseWithoutHeader(Type typeOfT) throws IOException {
         StringBuilder response = new StringBuilder();
         appendResponseCode(response);
-        appendResponseBody(response);
+        appendResponseBody(response, typeOfT);
         return response.toString();
     }
+
+    public T[] getResponseBody() {
+        return responseBody;
+    }
+
+
 }
