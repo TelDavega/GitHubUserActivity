@@ -2,6 +2,7 @@ package es.teldavega.http;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -91,12 +92,13 @@ public class HttpConnection <T>{
         this.readTimeout = readTimeout;
     }
 
-    public void executeRequest() throws IOException {
+    public void executeRequest(Type typeOfT, Logger log) throws IOException {
         this.connection = (HttpURLConnection) this.url.openConnection();
         this.connection.setRequestMethod(this.method.toString());
         addParams();
         addHeaders();
         addTimeouts();
+        getResponseBody(typeOfT, log);
     }
 
     private void addTimeouts() {
@@ -135,16 +137,26 @@ public class HttpConnection <T>{
     private <T> void appendResponseBody(StringBuilder fullResponseBuilder, Type typeOfT) throws IOException {
         fullResponseBuilder.append(RESPONSE_SEPARATOR_LINE);
         fullResponseBuilder.append("RESPONSE BODY:\n");
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(this.connection.getInputStream()));
-        String inputLine;
-        StringBuilder content = new StringBuilder();
-        while ((inputLine = in.readLine()) != null) {
-            content.append(inputLine).append("\n");
-        }
-        responseBody = gson.fromJson(content.toString(), typeOfT);
+
         fullResponseBuilder.append(Arrays.toString(responseBody));
-        in.close();
+    }
+
+    private void getResponseBody(Type typeOfT, Logger log) throws IOException {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(this.connection.getInputStream()));
+            String inputLine;
+            StringBuilder content = new StringBuilder();
+
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine).append("\n");
+            }
+            if (responseBody == null) {
+                responseBody = gson.fromJson(content.toString(), typeOfT);
+            }
+        } catch (Exception e) {
+            log.error("Error getting response from server", e);
+            throw e;
+        }
     }
 
     private void appendResponseHeaders(StringBuilder fullResponseBuilder) {
@@ -172,13 +184,13 @@ public class HttpConnection <T>{
         fullResponseBuilder.append(this.connection.getResponseCode())
                 .append(" ")
                 .append(this.connection.getResponseMessage())
-                .append("\n");
+                .append("\n")
+                .append(RESPONSE_SEPARATOR_LINE);
     }
 
-    public String getResponseWithoutHeader(Type typeOfT) throws IOException {
+    public String getResponseWithoutBody() throws IOException {
         StringBuilder response = new StringBuilder();
         appendResponseCode(response);
-        appendResponseBody(response, typeOfT);
         return response.toString();
     }
 
@@ -187,4 +199,8 @@ public class HttpConnection <T>{
     }
 
 
+    public void closeConnection() throws IOException {
+        this.connection.getInputStream().close();
+        this.connection.disconnect();
+    }
 }
